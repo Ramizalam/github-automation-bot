@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifySignature, saveWebhookEvent } from "@/services/webhook.service";
 import { processEvent } from "@/services/event.service";
+import { eventBus } from "@/lib/event-bus";
 
 // This is the public endpoint GitHub will POST webhook events to.
 // URL format configured on GitHub: https://yourdomain.com/api/webhooks/github
@@ -132,6 +133,9 @@ export async function POST(req: NextRequest) {
   // table — they never surface to GitHub as a delivery failure.
   // =========================================================================
   if (result.created && result.webhookEvent) {
+    // Notify connected SSE clients that a new event arrived (status: PENDING)
+    eventBus.emit("webhook-update", { userId: repository.userId });
+
     processEvent(result.webhookEvent.id).catch((err) => {
       console.error(
         `[WebhookRoute] Pipeline error for event ${result.webhookEvent!.id}:`,

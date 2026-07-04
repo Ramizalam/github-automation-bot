@@ -1,4 +1,4 @@
-/*
+clear/*
   Warnings:
 
   - Added the required column `webhookSecret` to the `Repository` table without a default value. This is not possible if the table is not empty.

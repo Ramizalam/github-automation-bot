@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { ruleEngine } from "@/services/rule-engine.service";
 import { executeAction } from "@/services/action.service";
+import { eventBus } from "@/lib/event-bus";
 import type { ActionResult, EventContext } from "@/types/webhook";
 
 // =============================================================================
@@ -142,6 +143,9 @@ export async function processEvent(eventId: string): Promise<void> {
     where: { id: eventId },
     data: { status: finalStatus },
   });
+
+  // Notify connected SSE clients that processing is complete (updates UI status + action logs)
+  eventBus.emit("webhook-update", { userId: event.repository.userId });
 
   console.log(`[EventService] Event ${eventId} marked as ${finalStatus}.`);
 }

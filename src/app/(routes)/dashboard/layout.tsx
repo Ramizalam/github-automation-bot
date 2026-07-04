@@ -1,6 +1,7 @@
 import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import DashboardNav from "@/components/layout/DashboardNav";
+import LiveUpdates from "@/components/features/LiveUpdates";
 
 // =============================================================================
 // Dashboard Layout — Server Component
@@ -20,6 +21,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-zinc-950">
+      <LiveUpdates />
       {/* Sidebar — Client Component for usePathname() */}
       <DashboardNav />
 
