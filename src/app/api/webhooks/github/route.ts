@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifySignature, saveWebhookEvent } from "@/services/webhook.service";
+import { processEvent } from "@/services/event.service";
 
 // This is the public endpoint GitHub will POST webhook events to.
 // URL format configured on GitHub: https://yourdomain.com/api/webhooks/github
@@ -120,8 +121,25 @@ export async function POST(req: NextRequest) {
   }
 
   // =========================================================================
-  // STEP 6: Return 201 Created — event is saved and queued for processing.
+  // STEP 6: Trigger the processing pipeline (fire-and-forget).
+  //
+  // WHY NOT AWAIT? GitHub expects a response within 10 seconds or it marks
+  // the delivery as failed and retries. Rule evaluation + action execution
+  // (GitHub API calls, Slack messages) can take longer than that.
+  //
+  // We return 201 immediately and let processEvent() run in the background.
+  // Any errors inside processEvent() are caught and logged to the ActionLog
+  // table — they never surface to GitHub as a delivery failure.
   // =========================================================================
+  if (result.created && result.webhookEvent) {
+    processEvent(result.webhookEvent.id).catch((err) => {
+      console.error(
+        `[WebhookRoute] Pipeline error for event ${result.webhookEvent!.id}:`,
+        err
+      );
+    });
+  }
+
   return NextResponse.json(
     { message: "Webhook received.", eventId: result.webhookEvent?.id },
     { status: 201 }
