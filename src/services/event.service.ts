@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { matchRules } from "@/services/rule-engine.service";
+import { ruleEngine } from "@/services/rule-engine.service";
 import { executeAction } from "@/services/action.service";
 import type { ActionResult, EventContext } from "@/types/webhook";
 
@@ -94,7 +94,7 @@ export async function processEvent(eventId: string): Promise<void> {
   // matchRules() is a PURE function — no awaiting needed.
   // It returns only the rules whose conditions all pass.
   // =========================================================================
-  const matchedRules = matchRules(rules, context);
+  const matchedRules = ruleEngine.matchRules(rules, context);
 
   console.log(
     `[EventService] ${matchedRules.length}/${rules.length} rule(s) matched for event ${eventId}.`
